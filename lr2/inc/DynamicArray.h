@@ -210,12 +210,18 @@ private:
 
 	void expand()
 	{
-		Array<Type> temp = std::move(*this);
-		capacity = temp.capacity * 2;
-		length = temp.length;
-		arr = static_cast<Type*>(std::malloc(sizeof(Type) * capacity));
-		for (size_t i = 0; i < length; i++)
-			new(&arr[i]) Type(std::move(temp.arr[i]));
+		capacity *= 2;
+		Type* newArr = static_cast<Type*>(std::malloc(sizeof(Type) * capacity));
+		for (int i = 0; i < length; i++)
+			if constexpr (std::is_move_constructible_v<Type>)
+				new(&newArr[i]) Type(std::move(arr[i]));
+			else
+			{
+				new(&newArr[i]) Type(arr[i]);
+				arr[i].~Type();
+			}
+		free(arr);
+		arr = newArr;
 	}
 };
 
